@@ -1,3 +1,5 @@
+#is instruction or operation better than action?
+
 class ACTION:    
     actionType = None   #'R' or 'W' enum or define? delete later
     transactionNum = None
@@ -10,6 +12,6 @@ class ACTION:
 
     def __str__(self):
         result = ""
-        result += self.actionType+self.transactionNum+self.item
+        result += self.actionType+str(self.transactionNum)+self.item
 
         return result      
