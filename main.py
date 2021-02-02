@@ -1,4 +1,8 @@
 
+# databases Ex 03:
+# this program checks if an input of a schedule of transaction operations
+# is conflict serializable
+
 import re
 import queue
 from action import ACTION
