@@ -1,7 +1,8 @@
 
 # databases Ex 03:
 # this program checks if an input of a schedule of transaction operations
-# is conflict serializable
+# is conflict serializable, and if yes, returns the serial order of the transactions
+# We assume the input is a valid schedule.
 
 import re
 import queue
@@ -9,18 +10,31 @@ from action import ACTION
 from graph import GRAPH
 
 
-def getAction(actionStr):
-    actionStr = actionStr.strip()
-    obj = re.match(
-        r'(?P<AcType>[R|W])(?P<TrNum>\d+)\((?P<AcItem>.*)\)', actionStr)
-    acType = obj.group("AcType")
-    trNum = int(obj.group("TrNum"))
-    acItem = obj.group("AcItem")
+def findMaxTransNum(schedList):
+    """this function returns the upper range of the transaction numbers"""
+    max = 0
 
-    return ACTION(acType, trNum, acItem)
+    for action in schedList:
+        max = action.transactionNum if action.transactionNum > max else max
+
+    return max
+
+ 
+def getAction(actionStr):
+    """this function receives a single action as string and returns it as an ACTION object"""
+    actionStr = actionStr.strip()
+
+    actionObject = re.match(
+        r'(?P<AcType>[R|W])(?P<TrNum>\d+)\((?P<AcItem>.*)\)', actionStr)
+    actionType = actionObject.group("AcType")
+    transactionNum = int(actionObject.group("TrNum"))
+    actionItem = actionObject.group("AcItem")
+
+    return ACTION(actionType, transactionNum, actionItem)
 
 
 def parseSchedule(schedStr):
+    """this function parses the input string and returns a list of actions as objects"""
     actionList = []
 
     schedStr = schedStr.strip()
@@ -33,13 +47,14 @@ def parseSchedule(schedStr):
 
 
 def buildPrecGraph(schedList):
+    """this function builds a precedence graph based on the conflicts found in the schedule"""
     n = len(schedList)
 
     # initialize graph
     matrixSize = findMaxTransNum(schedList)
-    precGraph = GRAPH(matrixSize)  # we'll simply ignore the 0 row/column
+    precGraph = GRAPH(matrixSize)
 
-    # add edges as needed per precedence
+    # add edges per precedence
     for i in range(n):
         currTransNum = schedList[i].transactionNum
         currItem = schedList[i].item
@@ -55,21 +70,12 @@ def buildPrecGraph(schedList):
     return precGraph
 
 
-def findMaxTransNum(schedList):
-    max = 0
-
-    for action in schedList:
-        max = action.transactionNum if action.transactionNum > max else max
-
-    return max
-
-
 def TopologicalSort(graph):
+    """this function receives a graph and returns a toological sort if available"""
     topoSortList = []
-
     indegree = graph.getIndegreeList()
 
-    # creating queue of sources
+    # initializing queue of sources
     sourceQ = queue.Queue(graph.size)
     for i in range(len(indegree)):
         if indegree[i] == 0:
@@ -85,6 +91,8 @@ def TopologicalSort(graph):
             if indegree[v] == 0:
                 sourceQ.put(v)
 
+    # if there's a vertex with degree!=0 at this point, there's a cycle
+    # so there's no topological sort and we'll return an empty list
     for degree in indegree:
         if degree != 0:
             return []
@@ -97,10 +105,9 @@ def main():
     scheduleStr = input("Enter an action schedule: ")
     # parse schedule and return a list of action objects
     scheduleList = parseSchedule(scheduleStr)
-    # build precedence graph by scanning the schedule for conflicts
-    precGraph = buildPrecGraph(scheduleList)
-    precGraph.printGraph() # delete later - only for debugging
-    # topologicaly sort precedence graph.
+    # build precedence graph by checking the schedule for conflicts
+    precGraph = buildPrecGraph(scheduleList)    
+    # topologically sort precedence graph
     sortedList = TopologicalSort(precGraph)
     # the function will return a list of the sorted transactions
     # or an empty list if there's a cycle in the graph
